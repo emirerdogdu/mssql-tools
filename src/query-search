@@ -1,0 +1,10 @@
+select
+  S.name as [Schema],
+  o.name as [Object],
+  o.type_desc as [Object_Type],
+  C.text as [Object_Definition]
+from sys.all_objects O inner join sys.schemas S on O.schema_id = S.schema_id
+inner join sys.syscomments C on O.object_id = C.id
+where S.schema_id not in (3,4) -- avoid searching in sys and INFORMATION_SCHEMA schemas
+and C.text like '%Term%'
+order by [Schema]
