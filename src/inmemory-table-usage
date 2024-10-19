@@ -1,0 +1,8 @@
+SELECT 
+    t.object_id, 
+    t.name AS TableName, 
+    ISNULL(xtp_memory_consumer.memory_used_by_table_kb, 0) AS MemoryUsedKB
+FROM sys.tables t
+JOIN sys.dm_db_xtp_table_memory_stats xtp_memory_consumer
+ON t.object_id = xtp_memory_consumer.object_id
+ORDER BY MemoryUsedKB DESC
