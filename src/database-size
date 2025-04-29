@@ -1,0 +1,12 @@
+select * from (
+	SELECT
+		DB_NAME(database_id) AS DatabaseName,
+		SUM(size) * 8 / 1024 / 1024 AS SizeGB
+	FROM sys.master_files
+	GROUP BY database_id
+) A
+ORDER BY A.SizeGB desc
+
+SELECT
+	SUM(size) * 8 / 1024 / 1024 AS TotalSizeGB
+FROM sys.master_files
