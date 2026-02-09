@@ -1,0 +1,53 @@
+SELECT TOP 50
+    DB_NAME(tl.resource_database_id) AS db,
+    OBJECT_NAME(p.object_id, tl.resource_database_id) AS object_name,
+    tl.resource_type,
+    tl.request_mode,
+    tl.request_status,
+    COUNT(*) AS lock_count
+FROM sys.dm_tran_locks tl
+LEFT JOIN sys.partitions p
+    ON tl.resource_associated_entity_id = p.hobt_id
+WHERE tl.resource_database_id = DB_ID()
+GROUP BY
+    tl.resource_database_id,
+    p.object_id,
+    tl.resource_type,
+    tl.request_mode,
+    tl.request_status
+ORDER BY COUNT(*) DESC;
+
+
+SELECT TOP 50
+    tl.request_mode,
+    tl.request_status,
+    tl.resource_type,
+	p.object_id,
+    OBJECT_SCHEMA_NAME(p.object_id, tl.resource_database_id) AS [schema],
+    OBJECT_NAME(p.object_id, tl.resource_database_id) AS [table],
+    i.name AS index_name,
+    COUNT(*) AS lock_count
+FROM sys.dm_tran_locks tl
+JOIN sys.partitions p
+    ON tl.resource_associated_entity_id = p.hobt_id
+LEFT JOIN sys.indexes i
+    ON i.object_id = p.object_id AND i.index_id = p.index_id
+WHERE tl.resource_database_id = DB_ID()
+  -- and p.object_id
+GROUP BY
+    tl.request_mode, tl.request_status, tl.resource_type,
+    p.object_id, p.index_id, tl.resource_database_id, i.name
+ORDER BY lock_count DESC;
+
+
+SELECT TOP (30)
+  r.session_id, r.command, r.wait_type, r.wait_time, r.cpu_time, r.total_elapsed_time,
+  SUBSTRING(t.text, (r.statement_start_offset/2)+1,
+      (CASE WHEN r.statement_end_offset=-1 THEN DATALENGTH(t.text)
+            ELSE r.statement_end_offset END - r.statement_start_offset)/2 + 1) AS stmt_text
+FROM sys.dm_exec_requests r
+CROSS APPLY sys.dm_exec_sql_text(r.sql_handle) t
+WHERE r.session_id > 50
+  AND r.database_id = DB_ID()
+  -- AND t.text LIKE
+ORDER BY r.cpu_time DESC;
